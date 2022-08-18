@@ -264,7 +264,7 @@ const unsigned long PIN_12 = 12;
 const unsigned long PIN_13 = 13;
 const unsigned long PIN_14 = 33;
 
-unsigned long motor_pin[] = {PIN_1, PIN_2, PIN_3, PIN_4, PIN_5, PIN_6, PIN_7, PIN_8, PIN_9, PIN_10, PIN_11, PIN_12, PIN_13, PIN_14};
+unsigned long motor_pin[] = {PIN_1, PIN_2, PIN_3, PIN_4, PIN_5, PIN_6, PIN_7, PIN_9,PIN_10, PIN_8, PIN_11, PIN_12, PIN_13, PIN_14};
 const unsigned long number_of_modules = sizeof(motor_pin) / sizeof(int);
 
 // Parameters are Motor(byte pin, unsigned long SOA, unsigned long DOS, unsigned long activeTime)
@@ -288,10 +288,10 @@ Motor Motor13(motor_pin[12], SOA, DOS, activeTime, 255);
 Motor Motor14(motor_pin[13], SOA, DOS, activeTime, 255);
 
 // Uncomment for full array of motors
-//Motor Motors[] = {Motor1, Motor2, Motor3, Motor4, Motor5 , Motor6, Motor7, Motor8, Motor9, Motor10, Motor11, Motor12, Motor13, Motor14};
+Motor Motors[] = {Motor1, Motor2, Motor3, Motor4, Motor5 , Motor6, Motor7, Motor8, Motor9, Motor10, Motor11, Motor12, Motor13, Motor14};
 
 // Current array of motors
-Motor Motors[] = {Motor1, Motor2, Motor3, Motor4, Motor9, Motor10};
+//Motor Motors[] = {Motor1, Motor2, Motor3, Motor4, Motor9, Motor10};
 
 // Global variables
 String input;
@@ -314,7 +314,7 @@ void setup() {
   Serial.begin(115200);
 
   // Initial conditions
-  maxIdx = 5;
+  maxIdx = 14;
   flag = 1;
   brush_mode =0;
   current_int_mode = -1;
