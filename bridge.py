@@ -1,63 +1,73 @@
-# This connects UDP to Unity and Serial to Python
+import socket
+import serial
 import serial.tools.list_ports
 import time
-import serial
-import socket
+import threading
 
+# Constants
+BAUD_RATE = 230400
+UDP_IP = "127.0.0.1"  # Localhost
+UDP_PORT = 11000  # Port number for UDP
 
-localIP = "127.0.0.1"
-localPort = 5500
-bufferSize = 1024
+def list_serial_ports():
+    """ Lists serial port names """
+    ports = serial.tools.list_ports.comports()
+    available_ports = [port.device for port in ports]
+    return available_ports
 
-msgFromServer = "Hello UDP Client"
-bytesToSend = str.encode(msgFromServer)
+def setup_udp_server(ip, port):
+    """ Set up UDP server """
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.bind((ip, port))
+    return sock
 
-# Arduino Setup
+def udp_listener(sock, ser):
+    """ Listen for messages from the UDP server and send to serial port """
+    while True:
+        data, addr = sock.recvfrom(1024)  # Buffer size is 1024 bytes
+        try:
+            # Convert data to float and send to serial
+            float_data = float(data.decode())
+            ser.write(f"{float_data}\n".encode('utf-8'))
+        except ValueError:
+            pass  # Ignore invalid data
 
+def get_float_input():
+    """ Get and validate float input from the user """
+    while True:
+        try:
+            value = float(input("Enter a float value between 0 and 5: "))
+            if 0 <= value <= 5:
+                return value
+            else:
+                print("Value must be between 0 and 5.")
+        except ValueError:
+            print("Invalid input. Please enter a valid float.")
 
-ports = list(serial.tools.list_ports.comports())
-arduino_port_name = ""
-for p in ports:
-    if("Arduino" in str(p)):
-        arduino_port_name = str(p).split(" -")[0]
+def main():
+    print("Listing all available serial ports...")
+    ports = list_serial_ports()
+    for i, port in enumerate(ports):
+        print(f"{i}: {port}")
 
-# If Arduino is not found, don't do any actions
-if(arduino_port_name == ""):
-    print("\n\nError : Haptic Glove not found. Please connect.")
-else:
-    print("\n\nConnected to Haptic Glove on port "+arduino_port_name)
+    port_index = int(input("Select the port number to connect: "))
+    selected_port = ports[port_index]
 
+    # Establish serial connection
+    
+    ser = serial.Serial(selected_port, BAUD_RATE, timeout=1)
+    ser.flush()
 
-# Importing Libraries
-arduino = serial.Serial(port=arduino_port_name,
-                        baudrate=115200, timeout=.1)
+    # Set up and start UDP listener thread
+    sock = setup_udp_server(UDP_IP, UDP_PORT)
+    udp_thread = threading.Thread(target=udp_listener, args=(sock, ser))
+    udp_thread.daemon = True
+    udp_thread.start()
 
+    while True:
+        value = get_float_input()
+        ser.write(f"{value}\n".encode('utf-8'))
+        time.sleep(0.01)
 
-def write_read(x):
-    arduino.write(bytes(x, 'utf-8'))
-    arduino.write(bytes('\n', 'utf-8'))
-    time.sleep(0.05)
-    data = arduino.readline()
-    return data
-
-# Create a datagram socket
-UDPServerSocket = socket.socket(family=socket.AF_INET, type=socket.SOCK_DGRAM)
-
-# Bind to address and ip
-UDPServerSocket.bind((localIP, localPort))
-print("UDP server up and listening")
-
-# Listen for incoming datagrams
-while(True):
-    bytesAddressPair = UDPServerSocket.recvfrom(bufferSize)
-    message = bytesAddressPair[0]
-    address = bytesAddressPair[1]
-    # clientMsg = "Message from Client:{}".format(message)
-    # clientIP = "Client IP Address:{}".format(address)
-    # print(clientMsg)
-    # print(clientIP)
-    if("Null" in str(message)):
-        print("Null")
-    else:
-        value = write_read(str(int(message)))
-        print(value) 
+if __name__ == "__main__":
+    main()
